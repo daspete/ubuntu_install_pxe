@@ -156,8 +156,13 @@ if [ ! -f ${FILE} ]; then
 	wget ${URL} -P /tmp
 fi
 
+umount /tmp
 mount ${FILE} /mnt/ -o loop
-mkdir ${tftpRoot}/${DISTRO}
+if[ ! -d "${tftpRoot}/${DISTRO}" ]; then
+	mkdir ${tftpRoot}/${DISTRO}
+fi
+
+rm -rf  ${tftpRoot}/${DISTRO}/*
 cp -a /mnt/casper/ ${tftpRoot}/${DISTRO}
 umount /mnt
 
