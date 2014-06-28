@@ -10,7 +10,16 @@ netRangeStop="192.168.10.110"
 
 tftpRoot="/srv/tftp"
 
-defaultImage="http://releases.ubuntu.com/releases/14.04/ubuntu-14.04-desktop-amd64.iso"
+#defaultImage="http://releases.ubuntu.com/releases/14.04/ubuntu-14.04-desktop-amd64.iso"
+defaultImage="http://ftp5.gwdg.de/pub/linux/debian/ubuntu/iso/14.04/ubuntu-14.04-desktop-i386.iso"
+
+
+if [[ $defaultImage == *amd64* ]]; then
+	usekernel=vmlinuz.efi
+else
+	usekernel=vmlinuz
+fi
+
 
 clear
 echo "------------------------------------------------------------------------"
@@ -185,15 +194,19 @@ fi
 echo "------------------------------------------------------------------------"
 echo -n "Creating Boot-Menu-Entry"
 
-cat <<EOF>  ${tftpRoot}/pxelinux.cfg/${DISTRO}.conf
-LABEL linux
-   MENU LABEL Ubuntu Live (${DISTRO}) 
-   KERNEL /${DISTRO}/casper/vmlinuz
-   APPEND initrd=/${DISTRO}/casper/initrd.lz boot=casper netboot=nfs nfsroot=${netIP}:${tftpRoot}/${DISTRO} quiet splash locale=de_DE bootkbd=de console-setup/layoutcode=de --
-   IPAPPEND 2
-EOF
+if [ ! -f "${tftpRoot}/pxelinux.cfg/${DISTRO}.conf" ]; then
 
-echo "MENU INCLUDE pxelinux.cfg/${DISTRO}.conf" >> ${tftpRoot}/pxelinux.cfg/default
+	cat <<EOF> ${tftpRoot}/pxelinux.cfg/${DISTRO}.conf
+	LABEL linux
+	   MENU LABEL Ubuntu Live (${DISTRO}) 
+	   KERNEL /${DISTRO}/casper/${usekernel}
+	   APPEND initrd=/${DISTRO}/casper/initrd.lz boot=casper netboot=nfs nfsroot=${netIP}:${tftpRoot}/${DISTRO} quiet splash locale=de_DE bootkbd=de console-setup/layoutcode=de --
+	   IPAPPEND 2
+	EOF
+
+	echo "MENU INCLUDE pxelinux.cfg/${DISTRO}.conf" >> ${tftpRoot}/pxelinux.cfg/default
+fi
+
 echo "done"
 echo "------------------------------------------------------------------------"
 
