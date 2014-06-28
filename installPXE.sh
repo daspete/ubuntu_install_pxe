@@ -10,6 +10,7 @@ netRangeStop="192.168.10.110"
 
 tftpRoot="/srv/tftp"
 
+defaultImage="http://releases.ubuntu.com/releases/14.04/ubuntu-14.04-desktop-amd64.iso"
 
 clear
 echo "------------------------------------------------------------------------"
@@ -18,7 +19,7 @@ echo "------------------------------------------------------------------------"
 echo "Installing dependencies (DHCP-Server, TFTP-Server, NFS-Server, SYSLINUX)"
 echo "------------------------------------------------------------------------"
 echo -n "Please hang on a moment... "
-sudo apt-get -y install dhcp3-server tftpd-hpa nfs-kernel-server syslinux > /dev/null
+apt-get -y install dhcp3-server tftpd-hpa nfs-kernel-server syslinux > /dev/null
 echo "ready"
 echo "------------------------------------------------------------------------"
 echo "DHCP-Server-Config"
@@ -64,7 +65,7 @@ fi
 if [ -f "/etc/dhcp/dhcpd.conf" ]; then
 	echo "------------------------------------------------------------------------"
 	echo -n "creating backup of your DHCP-Configuration... "
-	sudo mv /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
+	mv /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak
 	echo "done"
 fi
 
@@ -92,27 +93,37 @@ echo "done"
 echo "------------------------------------------------------------------------"
 echo -n "Creating NFS Export... "
 
+if [ ! -d "/srv/nfs/pxe" ]; then
+	mkdir -p /srv/nfs/pxe
+fi
 
-sudo mkdir -p /srv/nfs/pxe
-sudo echo "/srv/nfs/pxe $netAdd/$netMask(rw,no_root_squash,sync,no_subtree_check)" >> /etc/exports
+if grep -q "/srv/nfs/pxe $netAdd/$netMask(rw,no_root_squash,sync,no_subtree_check)" /etc/exports; then
+	echo
+else
+	echo "/srv/nfs/pxe $netAdd/$netMask(rw,no_root_squash,sync,no_subtree_check)" >> /etc/exports
+fi
+
+
 
 echo "done"
 echo "------------------------------------------------------------------------"
 echo "Restarting NFS-Server"
 echo "------------------------------------------------------------------------"
-sudo /etc/init.d/nfs-kernel-server reload
+/etc/init.d/nfs-kernel-server reload
 echo "------------------------------------------------------------------------"
 
 if [ -f "/etc/default/tftpd-hpa" ]; then
 	echo -n "Creating Backup of the TFTP-Configuration..."
-	sudo mv /etc/default/tftpd-hpa /etc/default/tftpd-hpa.bak
+	mv /etc/default/tftpd-hpa /etc/default/tftpd-hpa.bak
 	echo "done"
 	echo "------------------------------------------------------------------------"
 fi
 
 echo -n "writing TFTP-Configuration... "
 
-sudo mkdir $tftpRoot
+if [ ! -d $tftpRoot ]; then
+	mkdir $tftpRoot
+fi
 
 echo "RUN_DEAMON='yes'" >> /etc/default/tftpd-hpa
 echo "OPTIONS='-l -s $tftpRoot'" >> /etc/default/tftpd-hpa
@@ -129,7 +140,61 @@ service tftpd-hpa restart
 echo "------------------------------------------------------------------------"
 echo -n "Copying SYSLinux PXE-Boot-Image and configuration... "
 
-sudo cp /usr/lib/syslinux/pxelinux.0 $tftpRoot/ && sudo mkdir $tftpRoot/pxelinux.cfg
+if [ ! -f "/${tftpRoot}/pxelinux.0" ]; then
+	cp /usr/lib/syslinux/pxelinux.0 $tftpRoot/ && sudo mkdir $tftpRoot/pxelinux.cfg
+fi
 
 echo "done"
 echo "------------------------------------------------------------------------"
+echo "Loading and copying your distribution"
+
+if [ ! -z $1 ]; then
+	FILE=$1
+ 
+	if [ ! -f ${FILE} ]; then
+		echo "File ${FILE} not found"
+		exit 0
+	fi
+else
+	URL=${defaultImage}
+	FILE=/tmp/${URL##*/}
+fi
+ 
+ISO=${FILE##*/}
+DISTRO=${ISO%.*}
+DISTRO=${DISTRO//desktop/live}
+
+if [ ! -f ${FILE} ]; then
+	wget ${URL} -P /tmp
+fi
+
+mount ${FILE} /mnt/ -o loop
+mkdir ${tftpRoot}/${DISTRO}
+cp -a /mnt/casper/ ${tftpRoot}/${DISTRO}
+umount /mnt
+
+if grep -q "${tftpRoot}/${DISTRO}   *(ro,sync,no_subtree_check)" /etc/exports; then
+	echo
+else
+	echo "${tftpRoot}/${DISTRO}   *(ro,sync,no_subtree_check)" >> /etc/exports
+fi
+
+
+/etc/init.d/nfs-kernel-server restart
+
+echo "------------------------------------------------------------------------"
+echo -n "Creating Boot-Menu-Entry"
+
+cat <<EOF>  ${tftpRoot}/pxelinux.cfg/${DISTRO}.conf
+LABEL linux
+   MENU LABEL Ubuntu Live (${DISTRO}) 
+   KERNEL /${DISTRO}/casper/vmlinuz
+   APPEND initrd=/${DISTRO}/casper/initrd.lz boot=casper netboot=nfs nfsroot=${netIP}:${tftpRoot}/${DISTRO} quiet splash locale=de_DE bootkbd=de console-setup/layoutcode=de --
+   IPAPPEND 2
+EOF
+
+echo "MENU INCLUDE pxelinux.cfg/${DISTRO}.conf" >> ${tftpRoot}/pxelinux.cfg/default
+echo "done"
+echo "------------------------------------------------------------------------"
+
+echo "Congratulation :) you have now a PXE-Server running"
