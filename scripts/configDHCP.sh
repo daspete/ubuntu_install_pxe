@@ -2,13 +2,13 @@ source ./config.sh
 
 echo "DHCP-Server-Config"
 echo "------------------------------------------------------------------------"
-echo -n "Your network (default: 192.168.10.0) -> ";read userNetAdd;
-echo -n "Broadcast IP (default: 192.168.10.255) -> ";read userNetBroad;
-echo -n "IP of this PXE-Server (default: 192.168.10.50) -> ";read userNetIP;
-echo -n "Netmask (default: 255.255.255.0) -> ";read userNetMask;
-echo -n "Router (default: 192.168.10.1) -> ";read userNetRouter;
-echo -n "IP Range-Start for the Clients (default: 192.168.10.100) -> ";read userNetRangeStart;
-echo -n "IP Range-Stop for the Clients (default: 192.168.10.110) -> ";read userNetRangeStop;
+echo -n "Your network (default: $netAdd) -> ";read userNetAdd;
+echo -n "Broadcast IP (default: $netBroad) -> ";read userNetBroad;
+echo -n "IP of this PXE-Server (default: $netIP) -> ";read userNetIP;
+echo -n "Netmask (default: $netMask) -> ";read userNetMask;
+echo -n "Router (default: $netRouter) -> ";read userNetRouter;
+echo -n "IP Range-Start for the Clients (default: $netRangeStart) -> ";read userNetRangeStart;
+echo -n "IP Range-Stop for the Clients (default: $netRangeStop) -> ";read userNetRangeStop;
 
 if [ "$userNetAdd" != "" ]; then netAdd=$userNetAdd; fi
 if [ "$userNetBroad" != "" ]; then netBroad=$userNetBroad; fi
@@ -25,7 +25,6 @@ if [ -f "/etc/dhcp/dhcpd.conf" ]; then
         echo "done"
 fi
 
-echo "------------------------------------------------------------------------"
 echo -n "writing new DHCP-Configuration..."
 
         echo "authoritative;" >> /etc/dhcp/dhcpd.conf
@@ -43,4 +42,4 @@ echo -n "writing new DHCP-Configuration..."
         echo 'filename "/pxelinux.0";'  >> /etc/dhcp/dhcpd.conf
 
 echo "done"
-
+echo "------------------------------------------------------------------------"

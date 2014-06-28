@@ -1,19 +1,23 @@
 #!/bin/bash
 
+clear
+
+greenBlack='\E[32;40m'
+redBlack='\E[31;40m'
+
+echo -e "$greenBlack"
+
 source ./config.sh
 
-source ./scripts/installDep.sh
+echo "EASY PXE-SERVER-INSTALLER 0.0.1a"
+echo "------------------------------------------------------------------------"
 
-source ./scripts/configDHCP.sh
-
-source ./scripts/createSyslinux.sh
-
-source ./scripts/configTFTP.sh
-
-source ./scripts/copyImage.sh
-
-source ./scripts/configNFS.sh
-
-source ./scripts/makeBootMenu.sh
+echo -e "$redBlack"; source ./scripts/installDep.sh
+echo -e "$greenBlack"; source ./scripts/configDHCP.sh
+echo -e "$redBlack"; source ./scripts/createSyslinux.sh
+echo -e "$greenBlack"; source ./scripts/configTFTP.sh
+echo -e "$redBlack"; source ./scripts/copyImage.sh
+echo -e "$greenBlack"; source ./scripts/configNFS.sh
+echo -e "$redBlack"; source ./scripts/makeBootMenu.sh
 
 

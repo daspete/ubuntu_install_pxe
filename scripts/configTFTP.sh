@@ -2,7 +2,6 @@ if [ -f "/etc/default/tftpd-hpa" ]; then
         echo -n "Creating Backup of the TFTP-Configuration..."
         mv /etc/default/tftpd-hpa /etc/default/tftpd-hpa.bak
         echo "done"
-        echo "------------------------------------------------------------------------"
 fi
 
 echo -n "writing TFTP-Configuration... "
@@ -19,9 +18,7 @@ fi
         echo "TFTP_OPTIONS='-l -s'" >> /etc/default/tftpd-hpa
 
 echo "done"
-echo "------------------------------------------------------------------------"
 echo "Restarting TFTP-Server"
-echo "------------------------------------------------------------------------"
 service tftpd-hpa restart
 echo "------------------------------------------------------------------------"
 
