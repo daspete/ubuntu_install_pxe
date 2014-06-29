@@ -1,5 +1,9 @@
 echo -n "Creating Boot-Menu-Entry... "
 
+if [ ! -f "${tftpRoot}/pxelinux.cfg/default" ]; then
+   echo "default menu.c32" >> ${tftpRoot}/pxelinux.cfg/default
+fi
+
 if [ ! -f "${tftpRoot}/pxelinux.cfg/${DISTRO}.conf" ]; then
 
 cat <<EOF> ${tftpRoot}/pxelinux.cfg/${DISTRO}.conf
