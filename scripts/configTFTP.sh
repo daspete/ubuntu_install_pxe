@@ -7,7 +7,7 @@ fi
 echo -n "writing TFTP-Configuration... "
 
 if [ ! -d $tftpRoot ]; then
-        mkdir $tftpRoot
+        mkdir -p $tftpRoot
 fi
 
         echo "RUN_DEAMON='yes'" >> /etc/default/tftpd-hpa
